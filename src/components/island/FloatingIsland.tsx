@@ -4,43 +4,16 @@ export const FloatingIsland: React.FC = () => {
   return (
     <div className="floating-island-wrap">
       {/* Floating Notes hovering above the island */}
-      <div
-        className="sticky-note"
-        style={{
-          position: 'absolute',
-          top: '-24px',
-          left: '10px',
-          zIndex: 25,
-          transform: 'rotate(-4deg)',
-        }}
-      >
-        your pc can do this on its own
-      </div>
-
-      <div
-        className="sticky-note lime"
-        style={{
-          position: 'absolute',
-          top: '-18px',
-          right: '15px',
-          zIndex: 25,
-          transform: 'rotate(5deg)',
-        }}
-      >
-        ditch these capitalistic companies
-      </div>
-
-      <div
-        className="sticky-note cyan"
-        style={{
-          position: 'absolute',
-          bottom: '70px',
-          right: '-20px',
-          zIndex: 25,
-          transform: 'rotate(-3deg)',
-        }}
-      >
-        split and spread those papers
+      <div className="island-notes-container">
+        <div className="sticky-note island-note island-note-1">
+          your pc can do this on its own
+        </div>
+        <div className="sticky-note lime island-note island-note-2">
+          ditch these capitalistic companies
+        </div>
+        <div className="sticky-note cyan island-note island-note-3">
+          split and spread those papers
+        </div>
       </div>
 
       {/* SVG Floating Island Illustration */}

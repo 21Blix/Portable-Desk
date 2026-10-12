@@ -94,6 +94,6 @@ In your Cloudflare Pages project:
 
 ---
 
-## ☕ Made With Caffeine
+## 🧠 Made with strong mentality
 
-Built with love, unreasonable curiosity, and care for privacy.
+Built with love, unreasonable curiosity, strong mentality, and care for privacy.

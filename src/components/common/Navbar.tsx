@@ -98,12 +98,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAbout, onResetDesk }) => {
         </button>
 
         <a
-          href="https://github.com"
+          href="https://github.com/21Blix/Portable-Desk"
           target="_blank"
           rel="noopener noreferrer"
           className="icon-toggle-btn"
-          title="Source code on GitHub"
-          aria-label="GitHub Repository"
+          title="Source code on GitHub (21Blix/Portable-Desk)"
+          aria-label="GitHub Repository (21Blix/Portable-Desk)"
           onClick={() => {
             if (soundOn) playClickSound();
           }}

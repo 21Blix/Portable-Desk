@@ -347,3 +347,87 @@
   color: var(--cyan-electric);
   border: 1px solid var(--cyan-electric);
 }
+
+/* MOBILE WORKBENCH DIALOG OPTIMIZATIONS */
+@media (max-width: 680px) {
+  .modal-backdrop {
+    padding: 8px 6px;
+    align-items: flex-end;
+  }
+
+  .workspace-dialog {
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+    border-width: 2.5px;
+    width: 100%;
+  }
+
+  .workspace-header {
+    padding: 12px 14px;
+  }
+
+  .workspace-header-title {
+    gap: 8px;
+  }
+
+  .workspace-header-title h2 {
+    font-size: 1.15rem;
+  }
+
+  .workspace-header-title .tag {
+    font-size: 0.88rem;
+  }
+
+  .workspace-body {
+    padding: 16px 12px;
+    gap: 14px;
+  }
+
+  .file-queue-item {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .file-item-info {
+    width: 100%;
+  }
+
+  .file-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .thumbnail-grid {
+    grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+    gap: 10px;
+  }
+
+  .thumbnail-img-box {
+    height: 120px;
+  }
+
+  .settings-group {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .download-panel {
+    padding: 20px 14px;
+    gap: 14px;
+  }
+
+  .download-celebration-title {
+    font-size: 1.35rem;
+  }
+
+  .radio-pill-group {
+    gap: 6px;
+  }
+
+  .radio-pill-label {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+}

@@ -34,8 +34,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
             ad banners, and deceptive subscription popups.
           </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginTop: '10px', lineHeight: 1.6 }}>
-            <strong>Portable Desk</strong> is a passion project built on a different philosophy: what if useful
-            utilities felt like discovering an eccentric little indie computer game from an alternate internet?
+            <strong>Portable Desk</strong> is a passion project built on a different philosophy: what if pdf editing became truly free and local
           </p>
         </div>
 
@@ -93,7 +92,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
         <div style={{ textAlign: 'center', marginTop: '10px' }}>
           <div style={{ fontFamily: 'var(--font-hand)', fontSize: '1.4rem', color: 'var(--lime-acid)' }}>
-            made with caffeine &amp; unreasonable curiosity
+            Made with strong mentality
           </div>
         </div>
       </div>

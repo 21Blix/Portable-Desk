@@ -140,8 +140,21 @@
   .main-stage {
     display: flex;
     flex-direction: column;
-    padding: 0 16px 30px;
-    gap: 32px;
+    padding: 0 16px 36px;
+    gap: 28px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .stage-left,
+  .stage-center,
+  .stage-right {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .stage-center {
+    min-height: auto;
   }
 }
 
@@ -275,6 +288,38 @@
   max-width: 680px;
   position: relative;
   animation: islandFloat 6s ease-in-out infinite;
+}
+
+/* FLOATING NOTES OVER ISLAND */
+.island-notes-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.island-note {
+  pointer-events: auto;
+  position: absolute;
+  max-width: 240px;
+}
+
+.island-note-1 {
+  top: -24px;
+  left: 10px;
+  transform: rotate(-4deg);
+}
+
+.island-note-2 {
+  top: -18px;
+  right: 15px;
+  transform: rotate(5deg);
+}
+
+.island-note-3 {
+  bottom: 70px;
+  right: 10px;
+  transform: rotate(-3deg);
 }
 
 /* TOOL PEDESTALS GRID ON/AROUND ISLAND */
@@ -559,4 +604,254 @@
 
 .coffee-cup-btn:hover {
   transform: scale(1.18) rotate(6deg);
+}
+
+/* ========================================================
+   MOBILE & TABLET RESPONSIVENESS (< 768px and < 480px)
+   ======================================================== */
+@media (max-width: 768px) {
+  /* TOP NAVBAR */
+  .scene-navbar {
+    padding: 12px 14px;
+  }
+
+  .brand-wrapper {
+    gap: 10px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-text h1 {
+    font-size: 1.15rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .nav-actions {
+    gap: 6px;
+  }
+
+  .icon-toggle-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* HERO HEADER */
+  .hero-header {
+    padding: 8px 12px 16px;
+  }
+
+  .chunky-logo {
+    font-size: clamp(1.9rem, 7.5vw, 2.8rem);
+    text-shadow: 
+      0 1px 0 #925bff,
+      0 2px 0 #8549f7,
+      0 3px 0 #7633f0,
+      0 4px 1px rgba(0,0,0,0.5),
+      0 0 16px rgba(188, 121, 255, 0.5);
+  }
+
+  .hero-tagline {
+    font-size: 0.92rem;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    line-height: 1.4;
+  }
+
+  .hand-underline {
+    max-width: 240px;
+    width: 80%;
+  }
+
+  /* DROP PORTAL */
+  .portal-container {
+    min-height: 220px;
+    padding: 30px 16px 22px;
+  }
+
+  .portal-swirl-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+  }
+
+  .portal-prompt-main {
+    font-size: 1.2rem;
+  }
+
+  .portal-prompt-sub {
+    font-size: 1.05rem;
+  }
+
+  /* MASCOT */
+  .mascot-perch {
+    top: -38px;
+    right: 12px;
+    transform: scale(0.9);
+  }
+
+  .mascot-speech-bubble {
+    right: -6px;
+    max-width: calc(100vw - 48px);
+    white-space: normal;
+    font-size: 0.92rem;
+    padding: 6px 12px;
+  }
+
+  /* FLOATING ISLAND STICKY NOTES ON MOBILE */
+  .floating-island-wrap {
+    max-width: 100%;
+  }
+
+  .island-notes-container {
+    position: relative;
+    inset: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .island-note {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    max-width: 92%;
+    text-align: center;
+    box-shadow: 2px 3px 8px rgba(0,0,0,0.4);
+  }
+
+  .island-note-1 { transform: rotate(-1.5deg); }
+  .island-note-2 { transform: rotate(1.5deg); }
+  .island-note-3 { transform: rotate(-1deg); }
+
+  /* TOOL PEDESTALS — SPACIOUS 2-COLUMN DOCK ON MOBILE */
+  .tool-pedestals-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .tool-object-btn {
+    padding: 12px 8px;
+    gap: 6px;
+  }
+
+  .tool-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .tool-title {
+    font-size: 0.9rem;
+  }
+
+  .tool-subtitle {
+    font-size: 0.8rem;
+  }
+
+  /* CRT MONITOR PREVIEW */
+  .crt-housing {
+    padding: 12px;
+    border-radius: 16px;
+    border-width: 3px;
+  }
+
+  .crt-bezel {
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .crt-screen-content {
+    min-height: 190px;
+  }
+
+  .crt-preview-canvas {
+    max-height: 220px;
+  }
+
+  /* INDUSTRIAL PROCESSING MACHINE */
+  .processing-machine-box {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .giant-coral-btn {
+    padding: 14px 20px;
+    font-size: 1.25rem;
+    border-radius: 14px;
+  }
+
+  .machine-subtitle {
+    font-size: 1rem;
+  }
+
+  /* SCENE FOOTER */
+  .scene-footer {
+    padding: 18px 14px;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .footer-tags {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 440px) {
+  .scene-navbar {
+    padding: 10px 10px;
+  }
+
+  .brand-text h1 {
+    font-size: 1.05rem;
+  }
+
+  .brand-subtitle {
+    display: none; /* Hide subtitle on very narrow mobile screens for single clean row */
+  }
+
+  .icon-toggle-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .main-stage {
+    padding: 0 10px 24px;
+    gap: 20px;
+  }
+
+  .tool-pedestals-container {
+    gap: 8px;
+  }
+
+  .tool-object-btn {
+    padding: 10px 6px;
+  }
+
+  .tool-title {
+    font-size: 0.85rem;
+  }
+
+  .tool-subtitle {
+    font-size: 0.75rem;
+  }
 }
