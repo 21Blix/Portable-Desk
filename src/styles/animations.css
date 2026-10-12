@@ -1,0 +1,161 @@
+/* PORTABLE DESK — ANIMATION SUITE */
+
+@keyframes islandFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(0.4deg);
+  }
+}
+
+@keyframes portalPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px rgba(188, 121, 255, 0.4), inset 0 0 25px rgba(146, 91, 255, 0.5);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 50px rgba(188, 121, 255, 0.65), inset 0 0 45px rgba(188, 121, 255, 0.7);
+  }
+}
+
+@keyframes portalGooMorph {
+  0% {
+    border-radius: 52% 48% 60% 40% / 48% 54% 46% 52%;
+  }
+  33% {
+    border-radius: 46% 54% 48% 52% / 54% 46% 54% 46%;
+  }
+  66% {
+    border-radius: 58% 42% 52% 48% / 44% 56% 44% 56%;
+  }
+  100% {
+    border-radius: 52% 48% 60% 40% / 48% 54% 46% 52%;
+  }
+}
+
+@keyframes dashedSpin {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes paperDrift {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(3deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes mascotBlink {
+  0%, 96%, 100% {
+    transform: scaleY(1);
+  }
+  98% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes mascotPeek {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: 0.98; }
+  50% { opacity: 0.93; }
+}
+
+@keyframes crtScanlines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+
+@keyframes warningLightBlink {
+  0%, 100% {
+    background-color: #ff5268;
+    box-shadow: 0 0 12px #ff5268;
+  }
+  50% {
+    background-color: #591620;
+    box-shadow: none;
+  }
+}
+
+@keyframes steamPuff {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-15px) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(1.6);
+  }
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg) scale(1.04); }
+  75% { transform: rotate(3deg) scale(1.04); }
+}
+
+@keyframes titleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes underlineWiggle {
+  0%, 100% {
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dashoffset: 12;
+  }
+}
+
+/* Reduced Motion Mode */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] ::before,
+[data-reduced-motion="true"] ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

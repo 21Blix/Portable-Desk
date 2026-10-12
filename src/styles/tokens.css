@@ -1,0 +1,66 @@
+/* PORTABLE DESK — DESIGN TOKENS */
+:root {
+  /* Color Palette */
+  --bg-dark: #08090D;
+  --bg-secondary: #11131C;
+  --surface-elevated: #191A2A;
+  --surface-overlay: rgba(25, 26, 42, 0.88);
+  --surface-panel: #1e2034;
+  --surface-card: #242640;
+
+  /* Vivid Neon & Goo Accents */
+  --purple-electric: #925BFF;
+  --purple-goo: #BC79FF;
+  --purple-dark: #4b238f;
+  --lime-acid: #D6FF70;
+  --lime-glow: #e6ff9c;
+  --cyan-electric: #54F5E7;
+  --pink-hot: #FF5CA8;
+  --red-coral: #FF5268;
+  --blue-sky: #65B9FF;
+  --orange-caution: #FFA834;
+  --paper-cream: #F4EBD8;
+  --paper-white: #FCF9F2;
+  --paper-shadow: #e0d4be;
+
+  /* Typography Colors */
+  --text-main: #FFF9F0;
+  --text-muted: #B8B4C9;
+  --text-dim: #79768F;
+  --text-inverse: #08090D;
+
+  /* Typography Font Families */
+  --font-display: 'Fredoka', 'Outfit', system-ui, sans-serif;
+  --font-ui: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Caveat', cursive;
+  --font-mono: 'Space Mono', monospace;
+
+  /* Borders & Strokes */
+  --border-doodle: 2px dashed #925BFF;
+  --border-lime: 2px solid #D6FF70;
+  --border-cyan: 2px solid #54F5E7;
+  --border-dark: 2px solid #2e3150;
+  --border-subtle: 1px solid rgba(184, 180, 201, 0.15);
+
+  /* Shadows & Glows */
+  --shadow-neon-purple: 0 0 25px rgba(188, 121, 255, 0.45), 0 0 50px rgba(146, 91, 255, 0.2);
+  --shadow-neon-lime: 0 0 20px rgba(214, 255, 112, 0.5), 0 0 40px rgba(214, 255, 112, 0.25);
+  --shadow-neon-cyan: 0 0 20px rgba(84, 245, 231, 0.5);
+  --shadow-neon-pink: 0 0 25px rgba(255, 92, 168, 0.45);
+  --shadow-neon-coral: 0 0 30px rgba(255, 82, 104, 0.55);
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 20px 40px rgba(0, 0, 0, 0.6);
+  --shadow-button-press: 0 2px 0 rgba(0, 0, 0, 0.8);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+  --radius-blob: 42% 58% 70% 30% / 45% 45% 55% 55%;
+
+  /* Transitions */
+  --transition-bounce: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-smooth: 0.2s ease-out;
+  --transition-slow: 0.5s ease-in-out;
+}

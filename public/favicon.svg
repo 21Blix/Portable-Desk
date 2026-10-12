@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#08090D"/>
+  <!-- Glowing aura -->
+  <circle cx="32" cy="32" r="24" fill="#925BFF" opacity="0.3" filter="blur(8px)"/>
+  <!-- Tilted playful paper sheet -->
+  <g transform="rotate(-6 32 32)">
+    <!-- Base paper with folded corner -->
+    <path d="M18 12 H38 L48 22 V50 C48 52.2 46.2 54 44 54 H18 C15.8 54 14 52.2 14 50 V16 C14 13.8 15.8 12 18 12 Z" fill="#F4EBD8" stroke="#D6FF70" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Folded corner tab -->
+    <path d="M38 12 V22 H48 Z" fill="#D6FF70" stroke="#08090D" stroke-width="1.5"/>
+    <!-- Cute doodle face on the paper -->
+    <circle cx="26" cy="32" r="2.5" fill="#08090D"/>
+    <circle cx="36" cy="32" r="2.5" fill="#08090D"/>
+    <!-- Cute little blush dots -->
+    <circle cx="22" cy="35" r="1.5" fill="#FF5CA8"/>
+    <circle cx="40" cy="35" r="1.5" fill="#FF5CA8"/>
+    <!-- Cheeky smile -->
+    <path d="M28 37 Q31 41 34 37" stroke="#08090D" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <!-- Little neon cyan doodle paperclip or spark -->
+    <path d="M42 44 L46 48 M46 44 L42 48" stroke="#54F5E7" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
