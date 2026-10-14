@@ -75,13 +75,22 @@ export interface MergeFileInput {
 
 export async function mergePDFs(
   files: MergeFileInput[],
-  options: { createBookmarks?: boolean } = {}
+  options: {
+    createBookmarks?: boolean;
+    onProgress?: (current: number, total: number, message: string) => void;
+  } = {}
 ): Promise<Uint8Array> {
   const mergedPdf = await PDFDocument.create();
   const bookmarks: { title: string; pageIndex: number }[] = [];
   let currentPageOffset = 0;
+  const total = files.length;
 
-  for (const file of files) {
+  for (let i = 0; i < total; i++) {
+    const file = files[i];
+    if (options.onProgress) {
+      options.onProgress(i + 1, total, `Merging "${file.name}" (${i + 1} of ${total})...`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
     const srcDoc = await PDFDocument.load(file.data, { ignoreEncryption: true });
     const copiedPages = await mergedPdf.copyPages(srcDoc, srcDoc.getPageIndices());
 
@@ -100,9 +109,16 @@ export async function mergePDFs(
   }
 
   if (options.createBookmarks && bookmarks.length > 0) {
+    if (options.onProgress) {
+      options.onProgress(total, total, 'Creating document outlines...');
+      await new Promise((r) => setTimeout(r, 0));
+    }
     createPDFOutlines(mergedPdf, bookmarks);
   }
 
+  if (options.onProgress) {
+    options.onProgress(total, total, 'Saving merged PDF...');
+  }
   return await mergedPdf.save();
 }
 
@@ -121,6 +137,7 @@ export async function splitPDF(
   options: {
     selectedPages?: number[]; // 1-indexed
     chunkSize?: number;
+    onProgress?: (current: number, total: number, message: string) => void;
   }
 ): Promise<SplitResultFile[]> {
   const srcDoc = await PDFDocument.load(data, { ignoreEncryption: true });
@@ -134,9 +151,19 @@ export async function splitPDF(
       throw new Error('No pages selected to extract.');
     }
 
+    if (options.onProgress) {
+      options.onProgress(1, 2, 'Extracting selected pages...');
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
     const newDoc = await PDFDocument.create();
     const copiedPages = await newDoc.copyPages(srcDoc, pagesToExtract);
     copiedPages.forEach((p) => newDoc.addPage(p));
+
+    if (options.onProgress) {
+      options.onProgress(2, 2, 'Saving extracted PDF...');
+      await new Promise((r) => setTimeout(r, 0));
+    }
 
     const bytes = await newDoc.save();
     results.push({
@@ -145,6 +172,10 @@ export async function splitPDF(
     });
   } else if (mode === 'burst') {
     for (let i = 0; i < totalPages; i++) {
+      if (options.onProgress) {
+        options.onProgress(i + 1, totalPages, `Bursting page ${i + 1} of ${totalPages}...`);
+        await new Promise((r) => setTimeout(r, 0));
+      }
       const newDoc = await PDFDocument.create();
       const [copiedPage] = await newDoc.copyPages(srcDoc, [i]);
       newDoc.addPage(copiedPage);
@@ -159,8 +190,13 @@ export async function splitPDF(
   } else if (mode === 'chunks') {
     const chunkSize = Math.max(1, options.chunkSize || 2);
     let chunkIndex = 1;
+    const totalChunks = Math.ceil(totalPages / chunkSize);
 
     for (let i = 0; i < totalPages; i += chunkSize) {
+      if (options.onProgress) {
+        options.onProgress(chunkIndex, totalChunks, `Splitting group ${chunkIndex} of ${totalChunks}...`);
+        await new Promise((r) => setTimeout(r, 0));
+      }
       const pageIndices = [];
       for (let j = i; j < Math.min(i + chunkSize, totalPages); j++) {
         pageIndices.push(j);
@@ -193,16 +229,28 @@ export interface OrganizedPageItem {
 
 export async function organizePDF(
   data: ArrayBuffer,
-  pageOrder: OrganizedPageItem[]
+  pageOrder: OrganizedPageItem[],
+  onProgress?: (current: number, total: number, message: string) => void
 ): Promise<Uint8Array> {
   const srcDoc = await PDFDocument.load(data, { ignoreEncryption: true });
   const newDoc = await PDFDocument.create();
+  const total = pageOrder.length;
 
-  for (const item of pageOrder) {
+  for (let i = 0; i < total; i++) {
+    const item = pageOrder[i];
+    if (onProgress) {
+      onProgress(i + 1, total, `Rebuilding page ${i + 1} of ${total}...`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
     const [copiedPage] = await newDoc.copyPages(srcDoc, [item.originalIndex]);
     const currentRot = copiedPage.getRotation().angle;
     copiedPage.setRotation(degrees((currentRot + item.rotation) % 360));
     newDoc.addPage(copiedPage);
+  }
+
+  if (onProgress) {
+    onProgress(total, total, 'Finalizing organized PDF...');
+    await new Promise((r) => setTimeout(r, 0));
   }
 
   return await newDoc.save();
@@ -214,18 +262,30 @@ export async function organizePDF(
 export async function rotatePDF(
   data: ArrayBuffer,
   targetPageNumbers: number[], // 1-indexed
-  rotationDelta: number // 90, 180, 270
+  rotationDelta: number, // 90, 180, 270
+  onProgress?: (current: number, total: number, message: string) => void
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.load(data, { ignoreEncryption: true });
   const pages = doc.getPages();
   const targetSet = new Set(targetPageNumbers.map((n) => n - 1));
+  const total = pages.length;
 
-  pages.forEach((page, idx) => {
+  for (let idx = 0; idx < total; idx++) {
+    const page = pages[idx];
+    if (onProgress && targetSet.has(idx)) {
+      onProgress(idx + 1, total, `Orienting page ${idx + 1} of ${total}...`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
     if (targetSet.has(idx)) {
       const currentAngle = page.getRotation().angle;
       page.setRotation(degrees((currentAngle + rotationDelta) % 360));
     }
-  });
+  }
+
+  if (onProgress) {
+    onProgress(total, total, 'Saving rotated document...');
+    await new Promise((r) => setTimeout(r, 0));
+  }
 
   return await doc.save();
 }
@@ -241,6 +301,16 @@ export type PageNumberPosition =
   | 'bottom-center'
   | 'bottom-right';
 
+export type PageNumberFont =
+  | 'Helvetica'
+  | 'Helvetica-Bold'
+  | 'Helvetica-Oblique'
+  | 'Times-Roman'
+  | 'Times-Roman-Bold'
+  | 'Times-Roman-Italic'
+  | 'Courier'
+  | 'Courier-Bold';
+
 export interface PageNumberOptions {
   format: '{n}' | 'Page {n}' | '{n} / {total}' | '- {n} -';
   position: PageNumberPosition;
@@ -250,6 +320,8 @@ export interface PageNumberOptions {
   startNumber: number;
   startFromPage: number; // 1-indexed
   skipCover: boolean;
+  fontName?: PageNumberFont;
+  onProgress?: (current: number, total: number, message: string) => void;
 }
 
 function hexToRgb01(hex: string) {
@@ -259,19 +331,36 @@ function hexToRgb01(hex: string) {
   return rgb(((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255);
 }
 
+const FONT_MAP: Record<PageNumberFont, StandardFonts> = {
+  'Helvetica': StandardFonts.Helvetica,
+  'Helvetica-Bold': StandardFonts.HelveticaBold,
+  'Helvetica-Oblique': StandardFonts.HelveticaOblique,
+  'Times-Roman': StandardFonts.TimesRoman,
+  'Times-Roman-Bold': StandardFonts.TimesRomanBold,
+  'Times-Roman-Italic': StandardFonts.TimesRomanItalic,
+  'Courier': StandardFonts.Courier,
+  'Courier-Bold': StandardFonts.CourierBold,
+};
+
 export async function addPageNumbers(
   data: ArrayBuffer,
   options: PageNumberOptions
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.load(data, { ignoreEncryption: true });
   const pages = doc.getPages();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const fontKey = (options.fontName && FONT_MAP[options.fontName]) || StandardFonts.Helvetica;
+  const font = await doc.embedFont(fontKey);
   const color = hexToRgb01(options.textColorHex || '#11131c');
 
   const totalPages = pages.length;
   let counter = options.startNumber;
 
   for (let i = 0; i < totalPages; i++) {
+    if (options.onProgress) {
+      options.onProgress(i + 1, totalPages, `Stamping page ${i + 1} of ${totalPages}...`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
     const pageNum = i + 1;
     if (options.skipCover && pageNum === 1) continue;
     if (pageNum < options.startFromPage) continue;
@@ -315,6 +404,11 @@ export async function addPageNumbers(
     });
 
     counter++;
+  }
+
+  if (options.onProgress) {
+    options.onProgress(totalPages, totalPages, 'Saving numbered document...');
+    await new Promise((r) => setTimeout(r, 0));
   }
 
   return await doc.save();
@@ -383,11 +477,18 @@ async function transcodeImageToBytes(file: File): Promise<{ bytes: Uint8Array; f
 
 export async function imagesToPDF(
   images: ImageInputItem[],
-  settings: ImagesToPDFSettings
+  settings: ImagesToPDFSettings,
+  onProgress?: (current: number, total: number, message: string) => void
 ): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
+  const total = images.length;
 
-  for (const item of images) {
+  for (let i = 0; i < total; i++) {
+    const item = images[i];
+    if (onProgress) {
+      onProgress(i + 1, total, `Processing image ${i + 1} of ${total}: "${item.file.name}"...`);
+      await new Promise((r) => setTimeout(r, 0));
+    }
     const { bytes, format } = await transcodeImageToBytes(item.file);
     const embeddedImage =
       format === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);

@@ -6,6 +6,7 @@ import { splitPDF } from '../../lib/pdf/pdf-engine';
 import { parsePageRange } from '../../lib/utils/range-parser';
 import { getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface SplitWorkspaceProps {
@@ -19,6 +20,7 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
   const [rangeInput, setRangeInput] = useState<string>(`1-${Math.min(totalPages, 3)}`);
   const [chunkSize, setChunkSize] = useState<number>(2);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [splitProgress, setSplitProgress] = useState<{ percent: number; label: string } | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [resultFilename, setResultFilename] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +32,17 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
     try {
       setIsProcessing(true);
       setError(null);
+      setSplitProgress({ percent: 0, label: 'Reading document...' });
       playProcessSound();
 
       const safeBuffer = await getSafeFileArrayBuffer(file);
+
+      const progressCallback = (current: number, total: number, message: string) => {
+        setSplitProgress({
+          percent: Math.round((current / total) * 100),
+          label: message,
+        });
+      };
 
       if (mode === 'range') {
         if (!parsedRange.valid) {
@@ -41,6 +51,7 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
 
         const results = await splitPDF(safeBuffer, file.name, 'range', {
           selectedPages: parsedRange.pages,
+          onProgress: progressCallback,
         });
 
         if (results.length === 1) {
@@ -49,7 +60,10 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
           setResultFilename(results[0].filename);
         }
       } else if (mode === 'burst') {
-        const results = await splitPDF(safeBuffer, file.name, 'burst', {});
+        const results = await splitPDF(safeBuffer, file.name, 'burst', {
+          onProgress: progressCallback,
+        });
+        setSplitProgress({ percent: 90, label: 'Packaging pages into ZIP archive...' });
         const zip = new JSZip();
         for (const item of results) {
           zip.file(item.filename, item.data);
@@ -58,7 +72,11 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
         setResultBlob(zipBlob);
         setResultFilename(`${file.name.replace(/\.pdf$/i, '')}-all-pages.zip`);
       } else if (mode === 'chunks') {
-        const results = await splitPDF(safeBuffer, file.name, 'chunks', { chunkSize });
+        const results = await splitPDF(safeBuffer, file.name, 'chunks', {
+          chunkSize,
+          onProgress: progressCallback,
+        });
+        setSplitProgress({ percent: 90, label: 'Packaging groups into ZIP archive...' });
         const zip = new JSZip();
         for (const item of results) {
           zip.file(item.filename, item.data);
@@ -73,6 +91,7 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
       playErrorSound();
     } finally {
       setIsProcessing(false);
+      setSplitProgress(null);
     }
   };
 
@@ -211,6 +230,18 @@ export const SplitWorkspace: React.FC<SplitWorkspaceProps> = ({ file, onReset })
           </div>
         )}
       </div>
+
+      {/* Progress Bar */}
+      {isProcessing && splitProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={splitProgress.percent}
+            label={splitProgress.label}
+            subLabel="Carving and packaging documents in browser RAM..."
+            color="cyan"
+          />
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: '10px' }}>
         <button

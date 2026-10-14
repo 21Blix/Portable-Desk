@@ -4,6 +4,7 @@ import { convertPDFToImages, packageImagesAsZip } from '../../lib/pdf/pdf-to-ima
 import { parsePageRange } from '../../lib/utils/range-parser';
 import { getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface PDFToImagesWorkspaceProps {
@@ -18,7 +19,7 @@ export const PDFToImagesWorkspace: React.FC<PDFToImagesWorkspaceProps> = ({ file
   const [scale, setScale] = useState<number>(1.5);
   const [rangeMode, setRangeMode] = useState<'all' | 'custom'>('all');
   const [rangeInput, setRangeInput] = useState<string>(`1-${totalPages}`);
-  const [progressMsg, setProgressMsg] = useState<string>('');
+  const [convertProgress, setConvertProgress] = useState<{ percent: number; label: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [resultZip, setResultZip] = useState<{ blob: Blob; filename: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +48,10 @@ export const PDFToImagesWorkspace: React.FC<PDFToImagesWorkspaceProps> = ({ file
         scale,
         pages: targetPages,
         onProgress: (cur, tot) => {
-          setProgressMsg(`Rendering page ${cur} of ${tot}...`);
+          setConvertProgress({
+            percent: Math.round((cur / tot) * 100),
+            label: `Rendering high-res page ${cur} of ${tot}...`,
+          });
         },
       });
 
@@ -57,6 +61,7 @@ export const PDFToImagesWorkspace: React.FC<PDFToImagesWorkspaceProps> = ({ file
           filename: results[0].filename,
         });
       } else {
+        setConvertProgress({ percent: 95, label: 'Packaging images into ZIP...' });
         const zipBlob = await packageImagesAsZip(
           results,
           `${file.name.replace(/\.pdf$/i, '')}-images.zip`
@@ -72,7 +77,7 @@ export const PDFToImagesWorkspace: React.FC<PDFToImagesWorkspaceProps> = ({ file
       playErrorSound();
     } finally {
       setIsProcessing(false);
-      setProgressMsg('');
+      setConvertProgress(null);
     }
   };
 
@@ -239,9 +244,15 @@ export const PDFToImagesWorkspace: React.FC<PDFToImagesWorkspaceProps> = ({ file
         </div>
       </div>
 
-      {progressMsg && (
-        <div style={{ textAlign: 'center', fontFamily: 'var(--font-hand)', color: 'var(--cyan-electric)', fontSize: '1.2rem' }}>
-          📸 {progressMsg}
+      {/* Progress Bar */}
+      {isProcessing && convertProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={convertProgress.percent}
+            label={convertProgress.label}
+            subLabel="Converting vector document pages to raster images..."
+            color="purple"
+          />
         </div>
       )}
 

@@ -4,6 +4,7 @@ import type { LoadedFileItem } from '../../components/portal/DropPortal';
 import { mergePDFs, type MergeFileInput } from '../../lib/pdf/pdf-engine';
 import { formatBytes, getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface MergeWorkspaceProps {
@@ -21,6 +22,7 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
   const [createBookmarks, setCreateBookmarks] = useState<boolean>(true);
   const [bookmarkTitles, setBookmarkTitles] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [mergeProgress, setMergeProgress] = useState<{ percent: number; label: string } | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,6 +63,7 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
     try {
       setIsProcessing(true);
       setError(null);
+      setMergeProgress({ percent: 0, label: 'Reading files...' });
       playProcessSound();
 
       const mergeInputs: MergeFileInput[] = await Promise.all(
@@ -71,7 +74,15 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
         }))
       );
 
-      const mergedBytes = await mergePDFs(mergeInputs, { createBookmarks });
+      const mergedBytes = await mergePDFs(mergeInputs, {
+        createBookmarks,
+        onProgress: (current, total, message) => {
+          setMergeProgress({
+            percent: Math.round((current / total) * 100),
+            label: message,
+          });
+        },
+      });
       const blob = new Blob([mergedBytes as BlobPart], { type: 'application/pdf' });
       setResultBlob(blob);
     } catch (err: any) {
@@ -80,6 +91,7 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
       playErrorSound();
     } finally {
       setIsProcessing(false);
+      setMergeProgress(null);
     }
   };
 
@@ -228,6 +240,18 @@ export const MergeWorkspace: React.FC<MergeWorkspaceProps> = ({
           Automatically embeds PDF outline bookmarks pointing to the first page of each merged document.
         </p>
       </div>
+
+      {/* Progress Bar */}
+      {isProcessing && mergeProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={mergeProgress.percent}
+            label={mergeProgress.label}
+            subLabel="Stitching documents into a unified PDF in browser RAM..."
+            color="pink"
+          />
+        </div>
+      )}
 
       {/* Action Button */}
       <div style={{ textAlign: 'center', marginTop: '10px' }}>

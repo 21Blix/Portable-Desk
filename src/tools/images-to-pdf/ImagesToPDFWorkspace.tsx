@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { imagesToPDF, type ImageInputItem, type ImagesToPDFSettings } from '../../lib/pdf/pdf-engine';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface ImagesToPDFWorkspaceProps {
@@ -29,6 +30,7 @@ export const ImagesToPDFWorkspace: React.FC<ImagesToPDFWorkspaceProps> = ({
   });
 
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [imageProgress, setImageProgress] = useState<{ percent: number; label: string } | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,9 +70,15 @@ export const ImagesToPDFWorkspace: React.FC<ImagesToPDFWorkspaceProps> = ({
     try {
       setIsProcessing(true);
       setError(null);
+      setImageProgress({ percent: 0, label: 'Reading image files...' });
       playProcessSound();
 
-      const pdfBytes = await imagesToPDF(images, settings);
+      const pdfBytes = await imagesToPDF(images, settings, (current, total, message) => {
+        setImageProgress({
+          percent: Math.round((current / total) * 100),
+          label: message,
+        });
+      });
       const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
       setResultBlob(blob);
     } catch (err: any) {
@@ -79,6 +87,7 @@ export const ImagesToPDFWorkspace: React.FC<ImagesToPDFWorkspaceProps> = ({
       playErrorSound();
     } finally {
       setIsProcessing(false);
+      setImageProgress(null);
     }
   };
 
@@ -290,6 +299,18 @@ export const ImagesToPDFWorkspace: React.FC<ImagesToPDFWorkspaceProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      {isProcessing && imageProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={imageProgress.percent}
+            label={imageProgress.label}
+            subLabel="Transcoding image buffers and binding pages in browser RAM..."
+            color="lime"
+          />
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: '10px' }}>
         <button

@@ -4,6 +4,7 @@ import type { LoadedFileItem } from '../../components/portal/DropPortal';
 import { compressPDF, type CompressionPreset, type CompressResult } from '../../lib/pdf/pdf-compress-engine';
 import { formatBytes, getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface CompressWorkspaceProps {
@@ -14,7 +15,7 @@ interface CompressWorkspaceProps {
 export const CompressWorkspace: React.FC<CompressWorkspaceProps> = ({ file, onReset }) => {
   const [preset, setPreset] = useState<CompressionPreset>('medium');
   const [quality, setQuality] = useState<number>(0.75);
-  const [progressMsg, setProgressMsg] = useState<string>('');
+  const [compressProgress, setCompressProgress] = useState<{ percent: number; label: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [result, setResult] = useState<CompressResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +24,7 @@ export const CompressWorkspace: React.FC<CompressWorkspaceProps> = ({ file, onRe
     try {
       setIsProcessing(true);
       setError(null);
-      setProgressMsg('Initializing squeezer gears...');
+      setCompressProgress({ percent: 5, label: 'Initializing squeezer gears...' });
       playProcessSound();
 
       const safeBuffer = await getSafeFileArrayBuffer(file);
@@ -32,7 +33,10 @@ export const CompressWorkspace: React.FC<CompressWorkspaceProps> = ({ file, onRe
         preset,
         quality,
         onProgress: (current, total) => {
-          setProgressMsg(`Downsampling page ${current} of ${total}...`);
+          setCompressProgress({
+            percent: Math.round((current / total) * 100),
+            label: `Downsampling page ${current} of ${total}...`,
+          });
         },
       });
 
@@ -43,7 +47,7 @@ export const CompressWorkspace: React.FC<CompressWorkspaceProps> = ({ file, onRe
       playErrorSound();
     } finally {
       setIsProcessing(false);
-      setProgressMsg('');
+      setCompressProgress(null);
     }
   };
 
@@ -178,9 +182,15 @@ export const CompressWorkspace: React.FC<CompressWorkspaceProps> = ({ file, onRe
         )}
       </div>
 
-      {progressMsg && (
-        <div style={{ textAlign: 'center', fontFamily: 'var(--font-hand)', color: 'var(--lime-acid)', fontSize: '1.2rem' }}>
-          ⚙️ {progressMsg}
+      {/* Progress Bar */}
+      {isProcessing && compressProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={compressProgress.percent}
+            label={compressProgress.label}
+            subLabel="Recompressing page canvases in browser RAM..."
+            color="orange"
+          />
         </div>
       )}
 

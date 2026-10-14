@@ -22,7 +22,7 @@ import { PageNumbersWorkspace } from '../tools/page-numbers/PageNumbersWorkspace
 
 import { readFileAsArrayBuffer } from '../lib/utils/file-helpers';
 import { loadPDFDocument } from '../lib/pdf/pdfjs-init';
-import { playClickSound, playErrorSound } from '../lib/audio/sound-effects';
+import { playClickSound, playErrorSound, playProcessSound } from '../lib/audio/sound-effects';
 
 export const App: React.FC = () => {
   const [files, setFiles] = useState<LoadedFileItem[]>([]);
@@ -31,6 +31,7 @@ export const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState<boolean>(false);
   const [operationsCount, setOperationsCount] = useState<number>(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<{ percent: number; label: string; subLabel?: string } | null>(null);
 
   const addToast = (message: string, type: 'info' | 'error' | 'success' = 'info') => {
     const id = `toast-${Date.now()}-${Math.random()}`;
@@ -40,12 +41,33 @@ export const App: React.FC = () => {
     }, 4500);
   };
 
-  const handleFilesAccepted = async (incomingFiles: File[]) => {
+  const handleFilesAccepted = async (incomingFiles: File[], replace = false) => {
+    if (incomingFiles.length === 0) return;
+
     try {
+      setUploadProgress({
+        percent: 10,
+        label: `Uploading & ingesting ${incomingFiles.length} file(s)...`,
+        subLabel: 'Buffering into local browser memory...',
+      });
+
       const newItems: LoadedFileItem[] = [];
       const newImages: File[] = [];
+      const total = incomingFiles.length;
 
-      for (const file of incomingFiles) {
+      for (let i = 0; i < total; i++) {
+        const file = incomingFiles[i];
+        const currentPercent = Math.round(15 + ((i + 0.5) / total) * 75);
+
+        setUploadProgress({
+          percent: currentPercent,
+          label: `Ingesting "${file.name}" (${i + 1} of ${total})...`,
+          subLabel: 'Parsing PDF structure & verifying page tree...',
+        });
+
+        // Small yield so the UI and progress bar animate
+        await new Promise((r) => setTimeout(r, 40));
+
         if (file.type.startsWith('image/')) {
           newImages.push(file);
           continue;
@@ -74,26 +96,65 @@ export const App: React.FC = () => {
         }
       }
 
-      if (newItems.length > 0) {
-        setFiles((prev) => [...prev, ...newItems]);
-        addToast(
-          `Ingested ${newItems.length} PDF${newItems.length > 1 ? 's' : ''} into browser memory!`,
-          'success'
-        );
-      }
+      setUploadProgress({
+        percent: 100,
+        label: 'Ready!',
+        subLabel: 'All files safely held in browser RAM.',
+      });
+      await new Promise((r) => setTimeout(r, 150));
 
-      if (newImages.length > 0) {
-        setRawImageFiles((prev) => [...prev, ...newImages]);
-        addToast(`Ingested ${newImages.length} image${newImages.length > 1 ? 's' : ''}!`, 'success');
-        // Auto-suggest images-to-pdf if user dropped only images
-        if (files.length === 0 && newItems.length === 0) {
-          setActiveTool('images-to-pdf');
+      if (replace) {
+        setFiles(newItems);
+        setRawImageFiles(newImages);
+        setActiveTool(null);
+        if (newItems.length > 0) {
+          addToast(`Replaced document with "${newItems[0].name}"!`, 'success');
+        } else if (newImages.length > 0) {
+          addToast(`Replaced with ${newImages.length} image(s)!`, 'success');
+        }
+      } else {
+        if (newItems.length > 0) {
+          setFiles((prev) => [...prev, ...newItems]);
+          addToast(
+            `Ingested ${newItems.length} PDF${newItems.length > 1 ? 's' : ''} into browser memory!`,
+            'success'
+          );
+        }
+
+        if (newImages.length > 0) {
+          setRawImageFiles((prev) => [...prev, ...newImages]);
+          addToast(`Ingested ${newImages.length} image${newImages.length > 1 ? 's' : ''}!`, 'success');
+          // Auto-suggest images-to-pdf if user dropped only images
+          if (files.length === 0 && newItems.length === 0) {
+            setActiveTool('images-to-pdf');
+          }
         }
       }
     } catch (err: any) {
       addToast(err.message || 'Error loading files', 'error');
       playErrorSound();
+    } finally {
+      setUploadProgress(null);
     }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setFiles((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (updated.length === 0 && rawImageFiles.length === 0) {
+        setActiveTool(null);
+      }
+      return updated;
+    });
+    addToast('File removed from workflow.', 'info');
+  };
+
+  const handleClearWorkflow = () => {
+    playProcessSound();
+    setFiles([]);
+    setRawImageFiles([]);
+    setActiveTool(null);
+    addToast('Workflow cleared! Portal is reset and hungry for new files.', 'info');
   };
 
   const handleToolSelect = (tool: ToolType) => {
@@ -142,18 +203,15 @@ export const App: React.FC = () => {
 
   // Selected primary PDF for preview
   const primaryPdf = files.length > 0 ? files[0] : null;
+  const hasActiveFiles = files.length > 0 || rawImageFiles.length > 0;
 
   return (
     <div className="playground-container">
       {/* Top Header */}
       <Navbar
         onOpenAbout={() => setIsAboutOpen(true)}
-        onResetDesk={() => {
-          setFiles([]);
-          setRawImageFiles([]);
-          setActiveTool(null);
-          addToast('Desk wiped clean!', 'info');
-        }}
+        onResetDesk={handleClearWorkflow}
+        hasActiveFiles={hasActiveFiles}
       />
 
       {/* Hero Title Section */}
@@ -195,6 +253,9 @@ export const App: React.FC = () => {
           <DropPortal
             files={files}
             onFilesAccepted={handleFilesAccepted}
+            onRemoveFile={handleRemoveFile}
+            onClearAll={handleClearWorkflow}
+            uploadProgress={uploadProgress}
           />
         </div>
 
@@ -212,6 +273,7 @@ export const App: React.FC = () => {
           <CRTPreview
             fileItem={primaryPdf}
             filename={primaryPdf ? primaryPdf.name : undefined}
+            onClearFile={handleClearWorkflow}
           />
 
           <ProcessingMachine
@@ -227,10 +289,11 @@ export const App: React.FC = () => {
           title="Merge PDF"
           tagline="stick them together!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <MergeWorkspace
             initialFiles={files}
-            onAddNewFiles={handleFilesAccepted}
+            onAddNewFiles={(newFiles) => handleFilesAccepted(newFiles, false)}
             onReset={handleResetWorkspace}
           />
         </ToolModalWrapper>
@@ -241,6 +304,7 @@ export const App: React.FC = () => {
           title="Split PDF"
           tagline="chop it up!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <SplitWorkspace
             file={primaryPdf}
@@ -254,6 +318,7 @@ export const App: React.FC = () => {
           title="Organize PDF"
           tagline="reorder, delete, rotate"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <OrganizeWorkspace
             file={primaryPdf}
@@ -267,6 +332,7 @@ export const App: React.FC = () => {
           title="Compress PDF"
           tagline="make it smaller!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <CompressWorkspace
             file={primaryPdf}
@@ -280,6 +346,7 @@ export const App: React.FC = () => {
           title="PDF to Images"
           tagline="turn pages into pics"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <PDFToImagesWorkspace
             file={primaryPdf}
@@ -293,6 +360,7 @@ export const App: React.FC = () => {
           title="Images to PDF"
           tagline="pics to pdf!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <ImagesToPDFWorkspace
             initialImages={rawImageFiles}
@@ -306,6 +374,7 @@ export const App: React.FC = () => {
           title="Rotate PDF"
           tagline="spin it!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <RotateWorkspace
             file={primaryPdf}
@@ -319,6 +388,7 @@ export const App: React.FC = () => {
           title="Add Page Numbers"
           tagline="add some numbers!"
           onClose={() => setActiveTool(null)}
+          onClearWorkflow={handleClearWorkflow}
         >
           <PageNumbersWorkspace
             file={primaryPdf}

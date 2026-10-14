@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, X, RotateCcw, RefreshCw } from 'lucide-react';
 import { MascotCat } from './MascotCat';
 import { formatBytes } from '../../lib/utils/file-helpers';
-import { playPortalDropSound } from '../../lib/audio/sound-effects';
+import { playPortalDropSound, playClickSound } from '../../lib/audio/sound-effects';
+import { ProgressBar } from '../common/ProgressBar';
 
 export interface LoadedFileItem {
   file: File;
@@ -14,7 +15,10 @@ export interface LoadedFileItem {
 
 interface DropPortalProps {
   files: LoadedFileItem[];
-  onFilesAccepted: (newFiles: File[]) => void;
+  onFilesAccepted: (newFiles: File[], replace?: boolean) => void;
+  onRemoveFile?: (index: number) => void;
+  onClearAll?: () => void;
+  uploadProgress?: { percent: number; label: string; subLabel?: string } | null;
   accept?: string;
   multiple?: boolean;
 }
@@ -22,11 +26,15 @@ interface DropPortalProps {
 export const DropPortal: React.FC<DropPortalProps> = ({
   files,
   onFilesAccepted,
+  onRemoveFile,
+  onClearAll,
+  uploadProgress = null,
   accept = '.pdf,application/pdf,image/*',
   multiple = true,
 }) => {
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -48,7 +56,7 @@ export const DropPortal: React.FC<DropPortalProps> = ({
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       playPortalDropSound();
       const droppedFiles = Array.from(e.dataTransfer.files);
-      onFilesAccepted(droppedFiles);
+      onFilesAccepted(droppedFiles, false);
     }
   };
 
@@ -56,7 +64,16 @@ export const DropPortal: React.FC<DropPortalProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       playPortalDropSound();
       const selectedFiles = Array.from(e.target.files);
-      onFilesAccepted(selectedFiles);
+      onFilesAccepted(selectedFiles, false);
+      e.target.value = '';
+    }
+  };
+
+  const handleReplaceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      playPortalDropSound();
+      const selectedFiles = Array.from(e.target.files);
+      onFilesAccepted(selectedFiles, true);
       e.target.value = '';
     }
   };
@@ -66,7 +83,7 @@ export const DropPortal: React.FC<DropPortalProps> = ({
       {/* Mascot perched on the portal top rim */}
       <MascotCat />
 
-      {/* Hidden native input */}
+      {/* Hidden native input for adding files */}
       <input
         ref={fileInputRef}
         type="file"
@@ -76,15 +93,41 @@ export const DropPortal: React.FC<DropPortalProps> = ({
         onChange={handleInputChange}
       />
 
+      {/* Hidden native input for replacing files directly */}
+      <input
+        ref={replaceInputRef}
+        type="file"
+        multiple={multiple}
+        accept={accept}
+        style={{ display: 'none' }}
+        onChange={handleReplaceChange}
+      />
+
       <div
         className={`portal-container ${isDragOver ? 'drag-active' : ''}`}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => {
+          if (!uploadProgress) {
+            fileInputRef.current?.click();
+          }
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         title="Click or drop files to feed the portal"
       >
-        {isDragOver ? (
+        {uploadProgress ? (
+          <div style={{ width: '90%', margin: '0 auto', textAlign: 'center', pointerEvents: 'none' }}>
+            <div className="portal-swirl-icon" style={{ transform: 'scale(1.15)', marginBottom: 8 }}>
+              🌀
+            </div>
+            <ProgressBar
+              progress={uploadProgress.percent}
+              label={uploadProgress.label}
+              subLabel={uploadProgress.subLabel || 'Ingesting files directly into browser memory...'}
+              color="lime"
+            />
+          </div>
+        ) : isDragOver ? (
           <div>
             <div className="portal-swirl-icon" style={{ transform: 'scale(1.3)' }}>
               🌀
@@ -135,23 +178,24 @@ export const DropPortal: React.FC<DropPortalProps> = ({
 
       {/* Ingested file list preview badge underneath */}
       {files.length > 0 && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {files.slice(0, 3).map((f, i) => (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {files.map((f, i) => (
             <div
-              key={i}
+              key={`${f.name}-${i}`}
               style={{
                 background: 'var(--surface-panel)',
                 border: '1px solid rgba(146, 91, 255, 0.3)',
                 borderRadius: '8px',
-                padding: '6px 12px',
+                padding: '6px 10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 fontSize: '0.85rem',
+                gap: 8,
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                <FileText size={16} color="var(--lime-acid)" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden', flex: 1 }}>
+                <FileText size={16} color="var(--lime-acid)" style={{ flexShrink: 0 }} />
                 <span
                   style={{
                     color: 'var(--text-main)',
@@ -159,30 +203,74 @@ export const DropPortal: React.FC<DropPortalProps> = ({
                     textOverflow: 'ellipsis',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    maxWidth: '180px',
                   }}
+                  title={f.name}
                 >
                   {f.name}
                 </span>
               </div>
-              <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                {f.pageCount ? `${f.pageCount} pgs • ` : ''}
-                {formatBytes(f.size)}
-              </span>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                  {f.pageCount ? `${f.pageCount} pgs • ` : ''}
+                  {formatBytes(f.size)}
+                </span>
+                {onRemoveFile && (
+                  <button
+                    className="file-action-btn danger"
+                    style={{ padding: '3px 6px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playClickSound();
+                      onRemoveFile(i);
+                    }}
+                    title="Remove this file"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
-          {files.length > 3 && (
-            <div
-              style={{
-                textAlign: 'center',
-                fontFamily: 'var(--font-hand)',
-                color: 'var(--lime-acid)',
-                fontSize: '1rem',
-              }}
+
+          {/* Workflow Management Buttons */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <button
+              className="btn-chunky btn-dark"
+              style={{ flex: 1, padding: '7px 10px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+              onClick={() => replaceInputRef.current?.click()}
+              title="Replace current files with a new document"
             >
-              + {files.length - 3} more files waiting in RAM!
-            </div>
-          )}
+              <RefreshCw size={14} />
+              <span>Replace File</span>
+            </button>
+
+            {onClearAll && (
+              <button
+                className="btn-chunky"
+                style={{
+                  flex: 1,
+                  padding: '7px 10px',
+                  fontSize: '0.8rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  background: 'rgba(255, 92, 168, 0.15)',
+                  border: '1.5px solid var(--pink-hot)',
+                  color: '#fff',
+                }}
+                onClick={() => {
+                  playClickSound();
+                  onClearAll();
+                }}
+                title="Wipe files and reset current workflow"
+              >
+                <RotateCcw size={14} color="var(--pink-hot)" />
+                <span>Clear Workflow</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

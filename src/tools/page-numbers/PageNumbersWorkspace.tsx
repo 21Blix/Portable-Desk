@@ -1,14 +1,42 @@
 import React, { useState } from 'react';
 import type { LoadedFileItem } from '../../components/portal/DropPortal';
-import { addPageNumbers, type PageNumberOptions, type PageNumberPosition } from '../../lib/pdf/pdf-engine';
+import {
+  addPageNumbers,
+  type PageNumberOptions,
+  type PageNumberPosition,
+  type PageNumberFont,
+} from '../../lib/pdf/pdf-engine';
 import { getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
+import { Pipette, Type } from 'lucide-react';
 
 interface PageNumbersWorkspaceProps {
   file: LoadedFileItem;
   onReset: () => void;
 }
+
+const PRESET_COLORS = [
+  { hex: '#11131c', label: 'Obsidian' },
+  { hex: '#ffffff', label: 'Paper White' },
+  { hex: '#54f5e7', label: 'Electric Cyan' },
+  { hex: '#ff5ca8', label: 'Hot Pink' },
+  { hex: '#d6ff70', label: 'Acid Lime' },
+  { hex: '#ff5555', label: 'Coral Red' },
+  { hex: '#3b82f6', label: 'Sky Blue' },
+  { hex: '#a855f7', label: 'Magic Purple' },
+  { hex: '#f59e0b', label: 'Amber Orange' },
+];
+
+const FONT_OPTIONS: { id: PageNumberFont; label: string; cssFont: string }[] = [
+  { id: 'Helvetica', label: 'Helvetica (Clean Sans)', cssFont: 'Helvetica, Arial, sans-serif' },
+  { id: 'Helvetica-Bold', label: 'Helvetica Bold', cssFont: 'Helvetica, Arial, sans-serif' },
+  { id: 'Times-Roman', label: 'Times Roman (Serif)', cssFont: '"Times New Roman", Times, serif' },
+  { id: 'Times-Roman-Bold', label: 'Times Roman Bold', cssFont: '"Times New Roman", Times, serif' },
+  { id: 'Courier', label: 'Courier (Monospace)', cssFont: '"Courier New", Courier, monospace' },
+  { id: 'Courier-Bold', label: 'Courier Bold', cssFont: '"Courier New", Courier, monospace' },
+];
 
 export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file, onReset }) => {
   const totalPages = file.pageCount || 1;
@@ -16,12 +44,14 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
   const [position, setPosition] = useState<PageNumberPosition>('bottom-center');
   const [fontSize, setFontSize] = useState<number>(11);
   const [textColorHex, setTextColorHex] = useState<string>('#11131c');
+  const [fontName, setFontName] = useState<PageNumberFont>('Helvetica');
   const [marginOffset, setMarginOffset] = useState<number>(24);
   const [startNumber, setStartNumber] = useState<number>(1);
   const [startFromPage, setStartFromPage] = useState<number>(1);
   const [skipCover, setSkipCover] = useState<boolean>(false);
 
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processingProgress, setProcessingProgress] = useState<{ percent: number; label: string } | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +68,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
     try {
       setIsProcessing(true);
       setError(null);
+      setProcessingProgress({ percent: 0, label: 'Initializing stamps...' });
       playProcessSound();
 
       const options: PageNumberOptions = {
@@ -45,10 +76,17 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
         position,
         fontSize,
         textColorHex,
+        fontName,
         marginOffset,
         startNumber,
         startFromPage,
         skipCover,
+        onProgress: (current, total, message) => {
+          setProcessingProgress({
+            percent: Math.round((current / total) * 100),
+            label: message,
+          });
+        },
       };
 
       const safeBuffer = await getSafeFileArrayBuffer(file);
@@ -61,6 +99,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
       playErrorSound();
     } finally {
       setIsProcessing(false);
+      setProcessingProgress(null);
     }
   };
 
@@ -80,6 +119,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
 
   // Preview sample string
   const sampleText = format.replace('{n}', String(startNumber)).replace('{total}', String(totalPages));
+  const currentFontMeta = FONT_OPTIONS.find((f) => f.id === fontName) || FONT_OPTIONS[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -88,7 +128,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
           Stamp Page Numbers: {file.name}
         </h3>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Precisely imprint sequential numbers across {totalPages} pages.
+          Precisely imprint sequential numbers across {totalPages} pages with custom styling.
         </p>
       </div>
 
@@ -161,6 +201,30 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
           </div>
         </div>
 
+        {/* Font Family Selection */}
+        <div>
+          <label className="form-label" style={{ marginBottom: 6 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Type size={16} /> Font Family:
+            </span>
+          </label>
+          <div className="radio-pill-group">
+            {FONT_OPTIONS.map((f) => (
+              <button
+                key={f.id}
+                className={`radio-pill-label ${fontName === f.id ? 'active' : ''}`}
+                onClick={() => {
+                  playClickSound();
+                  setFontName(f.id);
+                }}
+                style={{ fontFamily: f.cssFont }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Visual Stamp Preview */}
         <div
           style={{
@@ -186,8 +250,9 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
               transform: position.includes('center') ? 'translateX(-50%)' : undefined,
               color: textColorHex,
               fontSize: `${fontSize}px`,
-              fontFamily: 'Helvetica, Arial, sans-serif',
-              fontWeight: 600,
+              fontFamily: currentFontMeta.cssFont,
+              fontWeight: fontName.includes('Bold') ? 700 : 500,
+              fontStyle: fontName.includes('Italic') || fontName.includes('Oblique') ? 'italic' : 'normal',
               padding: '2px 6px',
               border: '1px dashed rgba(84, 245, 231, 0.6)',
               borderRadius: '2px',
@@ -212,7 +277,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
         </div>
 
         {/* Font size, Margin, Colors, Skip Cover */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
           <div>
             <label className="form-label" style={{ marginBottom: 4 }}>
               <span>Font Size:</span>
@@ -221,7 +286,7 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
             <input
               type="range"
               min="8"
-              max="18"
+              max="24"
               value={fontSize}
               onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
               style={{ width: '100%', accentColor: 'var(--cyan-electric)' }}
@@ -236,32 +301,102 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
             <input
               type="range"
               min="10"
-              max="50"
+              max="60"
               value={marginOffset}
               onChange={(e) => setMarginOffset(parseInt(e.target.value, 10))}
               style={{ width: '100%', accentColor: 'var(--cyan-electric)' }}
             />
           </div>
 
-          <div>
-            <label className="form-label" style={{ marginBottom: 4 }}>
-              <span>Text Color:</span>
+          {/* Any Color Picker Section */}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label" style={{ marginBottom: 6 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Pipette size={16} /> Text Color:
+              </span>
+              <span style={{ color: 'var(--lime-acid)', fontFamily: 'var(--font-mono)' }}>{textColorHex}</span>
             </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {['#11131c', '#ffffff', '#54f5e7', '#ff5ca8'].map((col) => (
+
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {PRESET_COLORS.map((col) => (
                 <div
-                  key={col}
-                  onClick={() => setTextColorHex(col)}
+                  key={col.hex}
+                  onClick={() => {
+                    playClickSound();
+                    setTextColorHex(col.hex);
+                  }}
+                  title={`${col.label} (${col.hex})`}
                   style={{
-                    width: '28px',
-                    height: '28px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
-                    backgroundColor: col,
+                    backgroundColor: col.hex,
                     cursor: 'pointer',
-                    border: textColorHex === col ? '3px solid var(--lime-acid)' : '1px solid #444',
+                    border: textColorHex.toLowerCase() === col.hex.toLowerCase()
+                      ? '3px solid var(--lime-acid)'
+                      : '1.5px solid rgba(255,255,255,0.25)',
+                    boxShadow: textColorHex.toLowerCase() === col.hex.toLowerCase()
+                      ? '0 0 8px var(--lime-acid)'
+                      : 'none',
+                    transition: 'transform 0.15s ease',
                   }}
                 />
               ))}
+
+              {/* Native Custom Color Picker */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#090a12',
+                  border: '1.5px solid rgba(146, 91, 255, 0.4)',
+                  borderRadius: '20px',
+                  padding: '3px 10px',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-main)',
+                  }}
+                >
+                  <input
+                    type="color"
+                    value={textColorHex.startsWith('#') && textColorHex.length === 7 ? textColorHex : '#11131c'}
+                    onChange={(e) => setTextColorHex(e.target.value)}
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      border: 'none',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      background: 'none',
+                      padding: 0,
+                    }}
+                    title="Click for full color spectrum"
+                  />
+                  <span>Custom Color</span>
+                </label>
+                <input
+                  type="text"
+                  value={textColorHex}
+                  onChange={(e) => setTextColorHex(e.target.value)}
+                  placeholder="#000000"
+                  className="form-input"
+                  style={{
+                    width: '84px',
+                    padding: '3px 6px',
+                    fontSize: '0.8rem',
+                    fontFamily: 'var(--font-mono)',
+                    textAlign: 'center',
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -310,6 +445,18 @@ export const PageNumbersWorkspace: React.FC<PageNumbersWorkspaceProps> = ({ file
           </span>
         </label>
       </div>
+
+      {/* Progress Bar during processing */}
+      {isProcessing && processingProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={processingProgress.percent}
+            label={processingProgress.label}
+            subLabel="Adding sharp vector numbers to pages in browser RAM..."
+            color="cyan"
+          />
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: '10px' }}>
         <button

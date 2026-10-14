@@ -6,6 +6,7 @@ import { rotatePDF } from '../../lib/pdf/pdf-engine';
 import { parsePageRange } from '../../lib/utils/range-parser';
 import { getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
 import { DownloadPanel } from '../../components/workspace/DownloadPanel';
+import { ProgressBar } from '../../components/common/ProgressBar';
 import { playClickSound, playErrorSound, playProcessSound } from '../../lib/audio/sound-effects';
 
 interface RotateWorkspaceProps {
@@ -20,6 +21,7 @@ export const RotateWorkspace: React.FC<RotateWorkspaceProps> = ({ file, onReset 
   const [rotationAngle, setRotationAngle] = useState<number>(90);
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [rotateProgress, setRotateProgress] = useState<{ percent: number; label: string } | null>(null);
   const [resultBlob, setResultBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,10 +80,16 @@ export const RotateWorkspace: React.FC<RotateWorkspaceProps> = ({ file, onReset 
     try {
       setIsProcessing(true);
       setError(null);
+      setRotateProgress({ percent: 0, label: 'Initializing orientation gears...' });
       playProcessSound();
 
       const safeBuffer = await getSafeFileArrayBuffer(file);
-      const rotatedBytes = await rotatePDF(safeBuffer, targetPages, rotationAngle);
+      const rotatedBytes = await rotatePDF(safeBuffer, targetPages, rotationAngle, (current, total, message) => {
+        setRotateProgress({
+          percent: Math.round((current / total) * 100),
+          label: message,
+        });
+      });
       const blob = new Blob([rotatedBytes as BlobPart], { type: 'application/pdf' });
       setResultBlob(blob);
     } catch (err: any) {
@@ -90,6 +98,7 @@ export const RotateWorkspace: React.FC<RotateWorkspaceProps> = ({ file, onReset 
       playErrorSound();
     } finally {
       setIsProcessing(false);
+      setRotateProgress(null);
     }
   };
 
@@ -289,6 +298,18 @@ export const RotateWorkspace: React.FC<RotateWorkspaceProps> = ({ file, onReset 
           );
         })}
       </div>
+
+      {/* Progress Bar */}
+      {isProcessing && rotateProgress && (
+        <div style={{ marginTop: '8px' }}>
+          <ProgressBar
+            progress={rotateProgress.percent}
+            label={rotateProgress.label}
+            subLabel="Reorienting PDF coordinate matrices in browser RAM..."
+            color="pink"
+          />
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginTop: '10px' }}>
         <button

@@ -173,12 +173,40 @@
   border-color: var(--red-coral);
 }
 
-/* THUMBNAIL MATRIX / GRID FOR ORGANIZE & ROTATE */
 .thumbnail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 16px;
   padding: 10px 0;
+  transition: all 0.2s ease;
+}
+
+.thumbnail-grid.size-sm {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+.thumbnail-grid.size-sm .thumbnail-img-box {
+  height: 150px;
+}
+
+.thumbnail-grid.size-md {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.thumbnail-grid.size-md .thumbnail-img-box {
+  height: 250px;
+}
+
+.thumbnail-grid.size-lg {
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+}
+.thumbnail-grid.size-lg .thumbnail-img-box {
+  height: 380px;
+}
+
+.thumbnail-grid.size-xl {
+  grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+}
+.thumbnail-grid.size-xl .thumbnail-img-box {
+  height: 540px;
 }
 
 .thumbnail-card {
@@ -190,9 +218,13 @@
   flex-direction: column;
   align-items: center;
   position: relative;
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   user-select: none;
+}
+
+.thumbnail-card:active {
+  cursor: grabbing;
 }
 
 .thumbnail-card:hover {
@@ -204,6 +236,19 @@
 .thumbnail-card.selected {
   border-color: var(--lime-acid);
   box-shadow: 0 0 16px rgba(214, 255, 112, 0.4);
+}
+
+.thumbnail-card.is-dragging {
+  opacity: 0.35;
+  border: 2px dashed var(--pink-hot);
+  transform: scale(0.96);
+  cursor: grabbing !important;
+}
+
+.thumbnail-card.is-drop-target {
+  border-color: var(--lime-acid) !important;
+  box-shadow: 0 0 20px rgba(214, 255, 112, 0.6) !important;
+  transform: scale(1.04) translateY(-4px) !important;
 }
 
 .thumbnail-img-box {

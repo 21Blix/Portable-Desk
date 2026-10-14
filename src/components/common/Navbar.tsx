@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Sparkles, Eye, Info } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles, Eye, Info, RotateCcw } from 'lucide-react';
 import { isSoundEnabled, setSoundEnabled, playClickSound } from '../../lib/audio/sound-effects';
 
 interface NavbarProps {
   onOpenAbout: () => void;
   onResetDesk: () => void;
+  hasActiveFiles?: boolean;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenAbout, onResetDesk }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenAbout, onResetDesk, hasActiveFiles = false }) => {
   const [soundOn, setSoundOn] = useState<boolean>(false);
   const [reducedMotion, setReducedMotion] = useState<boolean>(false);
 
@@ -67,6 +68,34 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAbout, onResetDesk }) => {
       </div>
 
       <nav className="nav-actions">
+        {hasActiveFiles && (
+          <button
+            className="nav-clear-btn"
+            onClick={() => {
+              if (soundOn) playClickSound();
+              onResetDesk();
+            }}
+            title="Remove current files and clear workflow"
+            style={{
+              background: 'rgba(255, 92, 168, 0.15)',
+              border: '1.5px solid var(--pink-hot)',
+              color: '#ffffff',
+              padding: '5px 12px',
+              borderRadius: '20px',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 10px rgba(255, 92, 168, 0.3)',
+            }}
+          >
+            <RotateCcw size={14} color="var(--pink-hot)" />
+            <span>Clear Workflow</span>
+          </button>
+        )}
+
         <button
           className={`icon-toggle-btn ${soundOn ? 'active' : ''}`}
           onClick={toggleSound}

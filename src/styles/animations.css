@@ -142,6 +142,16 @@
   }
 }
 
+@keyframes progress-stripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 24px 0;
+  }
+}
+
+
 /* Reduced Motion Mode */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, Sparkles, FileQuestion } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Loader2, Sparkles, FileQuestion, Trash2 } from 'lucide-react';
 import { loadPDFDocument, renderPageToCanvas, renderPageThumbnail } from '../../lib/pdf/pdfjs-init';
 import { playClickSound } from '../../lib/audio/sound-effects';
 import { getSafeFileArrayBuffer } from '../../lib/utils/file-helpers';
@@ -12,6 +12,7 @@ interface CRTPreviewProps {
   currentPdfData?: ArrayBuffer | null;
   filename?: string;
   isProcessing?: boolean;
+  onClearFile?: () => void;
 }
 
 export const CRTPreview: React.FC<CRTPreviewProps> = ({
@@ -19,6 +20,7 @@ export const CRTPreview: React.FC<CRTPreviewProps> = ({
   currentPdfData,
   filename,
   isProcessing = false,
+  onClearFile,
 }) => {
   const [faceIndex, setFaceIndex] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -146,19 +148,32 @@ export const CRTPreview: React.FC<CRTPreviewProps> = ({
             {isProcessing ? '(⊙_⊙) working!' : CRT_FACES[faceIndex]}
           </div>
           {filename && (
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.75rem',
-                color: 'var(--text-muted)',
-                maxWidth: '160px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {filename}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  maxWidth: '120px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {filename}
+              </span>
+              {onClearFile && (
+                <button
+                  className="file-action-btn danger"
+                  onClick={onClearFile}
+                  style={{ padding: '2px 5px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: 3 }}
+                  title="Remove document from viewer"
+                >
+                  <Trash2 size={11} />
+                  <span>Eject</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -185,7 +200,7 @@ export const CRTPreview: React.FC<CRTPreviewProps> = ({
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>{error}</div>
             </div>
-          ) : currentPdfData && totalPages > 0 ? (
+          ) : (fileItem || currentPdfData) && totalPages > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
               <div
                 style={{
